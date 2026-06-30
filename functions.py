@@ -1,5 +1,4 @@
 from pathlib import Path
-from matplotlib import pyplot as plt
 
 # provide three of the four parameters (a, e(L mol-1 m-1), c(mol/L), l(m)) to calculate the missing one for the Beer-Lambert law.
 def beerlambert(a=None, e=None, c=None, l=None):
