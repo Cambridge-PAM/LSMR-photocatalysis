@@ -1,6 +1,7 @@
 from pathlib import Path
+from matplotlib import pyplot as plt
 
-# Provide three of the four parameters (a, e(L mol-1 m-1), c(mol/L), l(m)) to calculate the missing one for the Beer-Lambert law.
+# provide three of the four parameters (a, e(L mol-1 m-1), c(mol/L), l(m)) to calculate the missing one for the Beer-Lambert law.
 def beerlambert(a=None, e=None, c=None, l=None):
     try:
         if a is None:
@@ -17,7 +18,7 @@ def beerlambert(a=None, e=None, c=None, l=None):
         print("Error: three of the four parameters (a, e(L mol-1 m-1), c(mol/L), l(m)) needed to calculate the missing one.")
         return None
 
-# Provide two of the three parameters (m(g), M(g/mol), mol) to calculate the missing one for molar calculations.
+# provide two of the three parameters (m(g), M(g/mol), mol) to calculate the missing one for molar calculations.
 def molcalc(m=None, M=None, mol=None):
     try:
         if m is None:
@@ -32,7 +33,7 @@ def molcalc(m=None, M=None, mol=None):
         print("Error: two of the three parameters (m(g), M(g/mol), mol) needed to calculate the missing one.")
         return None
 
-# Provide the three parameters (mol, v(L), c(mol/L)) to calculate the missing one for solution calculations.
+# provide the three parameters (mol, v(L), c(mol/L)) to calculate the missing one for solution calculations.
 def solcalc(mol=None, v=None, c=None):
     try:
         if mol is None:
@@ -47,7 +48,7 @@ def solcalc(mol=None, v=None, c=None):
         print("Error: two of the three parameters (mol, v(L), c(mol/L)) needed to calculate the missing one.")
         return None
 
-# Provide the four parameters (M(g/mol), mstock(g), vstock(L), cstock(mol/L), valiquot(L), vsol(L), csol(mol/L)) to calculate the missing one for solution preparation calculations.
+# provide the four parameters (M(g/mol), mstock(g), vstock(L), cstock(mol/L), valiquot(L), vsol(L), csol(mol/L)) to calculate the missing one for solution preparation calculations.
 def solprop(M=None, mstock=None, vstock=None, cstock=None, valiquot=None, vsol=None, csol=None):
     try:
         if cstock is None:    
@@ -66,7 +67,7 @@ def solprop(M=None, mstock=None, vstock=None, cstock=None, valiquot=None, vsol=N
         print("Error: two of the three parameters (valiquot(L), vsol(L), csol(mol/L)) needed to calculate the missing one.")
         return None
 
-# Return the elapsed time between two timestamps in the format hh-mm-ss-ms.
+# return the elapsed time between two timestamps in the format hh-mm-ss-ms.
 def elapsed(start, end):
 
     def parse(time):
@@ -122,3 +123,19 @@ def concvstime(data, peak, width, l, e, start="", end="", duration=None):
     
     c = [beerlambert(a=absorbance, l=l, e=e) for absorbance in a] # convert absorbance to concentration using Beer-Lambert law
     return t, c
+
+# extract uv-vis absorption spectrum from oceanoptics data
+def uvvis(data):
+    
+    l = []
+    a = []
+
+    with open(data, "r") as file:
+        for line in file:
+            try: # line contains spectrum data
+                l.append(float(line.split("	")[0]))
+                a.append(float(line.split("	")[1]))
+            except: # line does not contain spectrum data
+                continue
+    
+    return l, a
