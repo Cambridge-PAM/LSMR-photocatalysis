@@ -126,8 +126,8 @@ def concvstime(data, peak, width, l, e, start="", end="", duration=None):
 # extract uv-vis absorption spectrum from oceanoptics data
 def uvvis(data):
     
-    l = []
-    a = []
+    l = [] # wavelengths
+    a = [] # absorbances
 
     with open(data, "r") as file:
         for line in file:
