@@ -1,3 +1,5 @@
+import numpy as np
+import scipy.stats as stats
 from pathlib import Path
 
 # provide three of the four parameters (a, e(L mol-1 m-1), c(mol/L), l(m)) to calculate the missing one for the Beer-Lambert law.
@@ -66,6 +68,19 @@ def solprop(M=None, mstock=None, vstock=None, cstock=None, valiquot=None, vsol=N
         print("Error: two of the three parameters (valiquot(L), vsol(L), csol(mol/L)) needed to calculate the missing one.")
         return None
 
+# provide two of the three parameters (flowrate, tR, vol) in any consistent units to calculate the missing one for flow calculations.
+def flowprop(flowrate=None, tR=None, vol=None):
+    try:
+        if flowrate is None:
+            return vol / tR
+        elif tR is None:
+            return vol / flowrate
+        elif vol is None:
+            return flowrate * tR
+    except:
+        print("Error: two of the three parameters (flowrate, tR, vol) needed to calculate the missing one.")
+        return None
+
 # return the elapsed time between two timestamps in the format hh-mm-ss-ms.
 def elapsed(start, end):
 
@@ -82,13 +97,13 @@ def elapsed(start, end):
 
     return parse(end) - parse(start)
 
-# concentration of compound over time from oceanoptics data
-def concvstime(data, peak, width, l, e, start="", end="", duration=None):
+# concentration of compound over time from oceanoptics data, optional linear regression for initial first order rate
+def concvstime(data, peak, l, e, start="", end="", duration=1e10, pwidth=10,
+               linregstart=0, r2threshold=None, interceptthreshold=None):
 
     a = [] # array of absorbances
     t = [] # array of time in seconds
 
-    absorbances = [] # list of absorbances to average
     read = False
 
     for f in Path(data).glob('*.txt'):
@@ -98,33 +113,143 @@ def concvstime(data, peak, width, l, e, start="", end="", duration=None):
         
         time = elapsed(start, timestamp) # convert timestamp to time in seconds
 
-        if time >= duration or  timestamp == end:
+        if time >= duration or timestamp == end:
             read = False # stop reading files
             break
         elif time >= 0:
             read = True # start reading files
         
         if read:
-            t.append(time)
+            t.append(time) # list of time points
             with f.open("r") as file:
                 absorbances = [] # list of absorbances to average
                 for line in file:
                     try:
                         wavelength = float(line.split("	")[0])
-                        if peak-width <= wavelength <= peak+width: # search for absorbance peak
+                        if peak-pwidth/2 <= wavelength <= peak+pwidth/2: # search for absorbance peak
                             absorbances.append(float(line.split("	")[1]))
-                        elif peak+width <= wavelength: # finish search for absorbance peak
+                        elif peak+pwidth/2 <= wavelength: # finish search for absorbance peak
                             a.append(sum(absorbances)/len(absorbances)) # average the absorbances 
-                            absorbances = [] # reset absorbances list
                             break
                     except:
-                        pass
+                        continue
     
     c = [beerlambert(a=absorbance, l=l, e=e) for absorbance in a] # convert absorbance to concentration using Beer-Lambert law
+
+    # if r2threshold is not None:
+    #     for i in range(linregstart, len(t)):
+    #         fit = stats.linregress(t[:i+1], c[:i+1])
+    #         if fit.rvalue**2 <= r2threshold or fit.intercept >= interceptthreshold: # stop when r2 or intercept exceeds thresholds
+    #             fit = stats.linregress(t[:i], c[:i]) # return the last fit
+    #             print(f"r2 = {fit.rvalue**2}")
+    #             print(f"intercept = {fit.intercept}")
+    #             print(f"index = {i}")
+    #             return t, c, fit, i
+    # else: # no linear regression requested
     return t, c
 
+# concentration of compound at a given time points (in seconds) from oceanoptics data
+def concvstimepoints(data, peak, l, e, points, start="", pwidth=10, twidth=5):
+    
+    a = [] # array of absorbances
+
+    files = sorted(Path(data).glob('*.txt'), key=lambda f: f.name) # sort files by timestamp
+    
+    for i in range(len(files)):
+        f = files[i]
+        timestamp = f.name[-16:-4]
+        
+        if start == "": 
+            start = timestamp # if no start time defined, start with the first file
+        
+        time = int(elapsed(start, timestamp)) # convert timestamp to time in seconds
+        
+        if time in points:
+            for j in range(-twidth//2, twidth//2 + 1): # search for absorbance peak in files within twidth seconds of timestamp
+                with files[i+j].open("r") as file:
+                    absorbances = [] # list of absorbances to average
+                    for line in file:
+                        try:
+                            wavelength = float(line.split("	")[0])
+                            if peak-pwidth/2 <= wavelength <= peak+pwidth/2: # search for absorbance peak
+                                absorbances.append(float(line.split("	")[1]))
+                            elif peak+pwidth/2 <= wavelength: # finish search for absorbance peak
+                                break
+                        except:
+                            continue
+            a.append(sum(absorbances)/len(absorbances)) # average the absorbances 
+    
+    c = [beerlambert(a=absorbance, l=l, e=e) for absorbance in a] # convert absorbance to concentration using Beer-Lambert law
+    return c
+
+# uv-vis absorbance spectrum over time from oceanoptics data
+def spectrumvstime(data, start="", end="", duration=1e10):
+
+    t = [] # time in seconds
+    l = [] # wavelengths
+    a = [] # absorbances
+
+    read = False
+
+    for f in Path(data).glob('*.txt'):
+        timestamp = f.name[-16:-4]
+        if start == "":
+            start = timestamp # if no start time defined, start with the first file
+        
+        time = elapsed(start, timestamp) # convert timestamp to time in seconds
+
+        if time >= duration or timestamp == end:
+            read = False # stop reading files
+            break
+        elif time >= 0:
+            read = True # start reading files
+        
+        if read:
+            t.append(time) # list of time points 
+            with f.open("r") as file:
+                a.append([]) # list of absorbances for this time point
+                for line in file:
+                    try: # line contains spectrum data
+                        if len(t) == 1: # if first instance
+                            l.append(float(line.split("	")[0])) # create list of wavelengths
+                        a[-1].append(float(line.split("	")[1])) # append absorbances for this time point
+                    except: # line does not contain spectrum data
+                        continue
+    
+    t = np.asarray(t) # convert list of time points to numpy array
+    l = np.asarray(l) # convert list of wavelengths to numpy array
+    a = np.array(a).T # convert list of absorbances to numpy array and transpose to have wavelengths as rows and time points as columns
+    
+    return t, l, a
+
+# uv-vis absorbance spectrum at given time points (in seconds) from oceanoptics data
+def spectrumvstimepoints(data, points, start=""):
+
+    l = [] # wavelengths
+    a = [] # absorbances
+    
+    for f in Path(data).glob('*.txt'):
+        timestamp = f.name[-16:-4]
+        if start == "":
+            start = timestamp # if no start time defined, start with the first file
+        
+        time = int(elapsed(start, timestamp)) # convert timestamp to time in seconds
+
+        if time in points:
+            with f.open("r") as file:
+                a.append([]) # list of absorbances for this time point
+                for line in file:
+                    try: # line contains spectrum data
+                        if len(a) == 1: # if first instance
+                            l.append(float(line.split("	")[0])) # create list of wavelengths
+                        a[-1].append(float(line.split("	")[1])) # append absorbances for this time point
+                    except: # line does not contain spectrum data
+                        continue
+    
+    return l, a
+
 # extract uv-vis absorption spectrum from oceanoptics data
-def uvvis(data):
+def spectrum(data):
     
     l = [] # wavelengths
     a = [] # absorbances
