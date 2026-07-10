@@ -111,29 +111,8 @@ def readpeak(file, peak, pwidth):
             continue
     return absorbances
 
-def readspectrum(file, l, a):
-    a.append([]) # list of absorbances for this time point
-    for line in file:
-        try: # line contains spectrum data
-            if len(a) == 1: # if first instance
-                l.append(float(line.split("	")[0])) # create list of wavelengths
-            a[-1].append(float(line.split("	")[1])) # append absorbances for this time point
-        except: # line does not contain spectrum data
-            continue
-
-# running linear regression analysis, starts selecting points from i0, adds more points until r2 and intercept exceed threshold
-def linreg(t, c, i0=0, r2threshold=None, interceptthreshold=None):
-    for i in range(i0, len(t)):
-        fit = stats.linregress(t[:i+1], c[:i+1])
-        if fit.rvalue**2 <= r2threshold or fit.intercept >= interceptthreshold: # stop when r2 or intercept exceeds thresholds
-            fit = stats.linregress(t[:i], c[:i]) # return the last fit
-            print(f"r2 = {fit.rvalue**2}")
-            print(f"intercept = {fit.intercept}")
-            print(f"index = {i}")
-            return fit, i
-
 # concentration of compound over time from oceanoptics data, optional linear regression for initial first order rate
-def concvstime(data, peak, l, e, start="", end="", duration=1e10, pwidth=10):
+def concvstime(data, peak, e, l, start="", end="", duration=1e10, pwidth=10):
 
     a = [] # array of absorbances
     t = [] # array of time in seconds
@@ -141,7 +120,7 @@ def concvstime(data, peak, l, e, start="", end="", duration=1e10, pwidth=10):
     read = False
 
     for f in Path(data).glob('*.txt'):
-        timestamp = f.name[-16:-4]
+        timestamp = f.stem[-12:]
         if start == "": 
             start = timestamp # if no start time defined, start with the first file
         
@@ -159,19 +138,19 @@ def concvstime(data, peak, l, e, start="", end="", duration=1e10, pwidth=10):
                 absorbances = readpeak(file, peak, pwidth)
                 a.append(sum(absorbances)/len(absorbances)) # average the absorbances
 
-    c = [beerlambert(a=absorbance, l=l, e=e) for absorbance in a] # convert absorbance to concentration using Beer-Lambert law
+    c = [beerlambert(a=absorbance, e=e, l=l) for absorbance in a] # convert absorbance to concentration using Beer-Lambert law
     return t, c
 
 # concentration of compound at given points from oceanoptics data
-def concvstimepoints(data, peak, l, e, points=None, start="", pwidth=10, twidth=5):
+def concvstimepoints(data, peak, e, l, points=None, start="", pwidth=10, twidth=5):
     
     a = [] # array of absorbances
-    files = sorted(Path(data).glob('*.txt'), key=lambda f: f.name) # sort files by timestamp
+    files = sorted(Path(data).glob('*.txt'), key=lambda f: f.stem[-12:]) # sort files by timestamp
     
     for i in range(len(files)):
         
         if points: # read files from certain time points (in seconds)
-            timestamp = files[i].name[-16:-4]
+            timestamp = files[i].stem[-12:]
             
             if start == "": 
                 start = timestamp # if no start time defined, start with the first file
@@ -189,8 +168,18 @@ def concvstimepoints(data, peak, l, e, points=None, start="", pwidth=10, twidth=
                 absorbances = readpeak(file, peak, pwidth)
                 a.append(sum(absorbances)/len(absorbances)) # average the absorbances
     
-    c = [beerlambert(a=absorbance, l=l, e=e) for absorbance in a] # convert absorbance to concentration using Beer-Lambert law
+    c = [beerlambert(a=absorbance, e=e, l=l) for absorbance in a] # convert absorbance to concentration using Beer-Lambert law
     return c
+
+def readspectrum(file, l, a):
+    a.append([]) # list of absorbances for this time point
+    for line in file:
+        try: # line contains spectrum data
+            if len(a) == 1: # if first instance
+                l.append(float(line.split("	")[0])) # create list of wavelengths
+            a[-1].append(float(line.split("	")[1])) # append absorbances for this time point
+        except: # line does not contain spectrum data
+            continue
 
 # uv-vis absorbance spectrum over time from oceanoptics data
 def spectrumvstime(data, start="", end="", duration=1e10):
@@ -202,7 +191,7 @@ def spectrumvstime(data, start="", end="", duration=1e10):
     read = False
 
     for f in Path(data).glob('*.txt'):
-        timestamp = f.name[-16:-4]
+        timestamp = f.stem[-12:]
         if start == "":
             start = timestamp # if no start time defined, start with the first file
         
@@ -231,10 +220,10 @@ def spectrumvstimepoints(data, points=None, start=""):
     l = [] # wavelengths
     a = [] # absorbances
     
-    for f in Path(data).glob('*.txt'):
+    for f in sorted(Path(data).glob('*.txt'), key=lambda f: f.stem[-12:]): # sort files by timestamp
         
         if points: # read files from certain time points (in seconds)
-            timestamp = f.name[-16:-4]
+            timestamp = f.stem[-12:]
             if start == "":
                 start = timestamp # if no start time defined, start with the first file
  
@@ -265,3 +254,26 @@ def spectrum(data):
                 continue
     
     return l, a
+
+# running linear regression analysis, starts selecting points from i0, adds more points until r2 and intercept exceed threshold
+def linreg(t, c, istart=1, iend=1e10, i=None, r2threshold=0, interceptthreshold=1e10):
+    if iend == 1e10:
+        iend = len(t)-1
+    if i:
+        istart = i
+        iend = i
+    for i in range(istart, iend+1):
+        fit = stats.linregress(t[:i+1], c[:i+1])
+        if fit.rvalue**2 <= r2threshold or fit.intercept >= interceptthreshold: # stop when r2 or intercept exceeds thresholds
+            fit = stats.linregress(t[:i], c[:i]) # return the last fit
+            break
+    return fit, i
+
+def errformat(val, err, prefix=1):
+    val = val*(1/prefix) # scale by the unit prefix
+    err = err*(1/prefix)
+    i = int(f"{err:.0e}".split("e")[-1])+1 # find the exponent such that the error has 1sf in the first decimal place
+    if abs(i) >= 3: # scientific notation if exponent is more than 3 
+        return rf"${val*(10**-i):.1f}$ ± ${err*(10**-i):.1f}$ $\times$ 10$^{{{i}}}$"
+    else: # show decimal places
+        return rf"${val:.{-i+1}f}$ ± ${err:.{-i+1}f}$"
