@@ -264,16 +264,19 @@ def linreg(t, c, istart=1, iend=1e10, i=None, r2threshold=0, interceptthreshold=
         iend = i
     for i in range(istart, iend+1):
         fit = stats.linregress(t[:i+1], c[:i+1])
-        if fit.rvalue**2 <= r2threshold or fit.intercept >= interceptthreshold: # stop when r2 or intercept exceeds thresholds
+        if fit.rvalue**2 <= r2threshold or abs(fit.intercept) >= abs(interceptthreshold): # stop when r2 or intercept exceeds thresholds
             fit = stats.linregress(t[:i], c[:i]) # return the last fit
             break
     return fit, i
 
-def errformat(val, err, prefix=1):
+# format numbers and error to appropriate decimal places
+def errformat(val, err, prefix=1, sci=True):
+
     val = val*(1/prefix) # scale by the unit prefix
     err = err*(1/prefix)
     i = int(f"{err:.0e}".split("e")[-1])+1 # find the exponent such that the error has 1sf in the first decimal place
-    if abs(i) >= 3: # scientific notation if exponent is more than 3 
+
+    if sci and prefix==1: # scientific notation to 1dp by default
         return rf"${val*(10**-i):.1f}$ ± ${err*(10**-i):.1f}$ $\times$ 10$^{{{i}}}$"
-    else: # show decimal places
+    else: # use more dp (implied default if a prefix is specified)
         return rf"${val:.{-i+1}f}$ ± ${err:.{-i+1}f}$"
