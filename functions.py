@@ -279,4 +279,4 @@ def errformat(val, err, prefix=1, sci=True):
     if sci and prefix==1: # scientific notation to 1dp by default
         return rf"${val*(10**-i):.1f}$ ± ${err*(10**-i):.1f}$ $\times$ 10$^{{{i}}}$"
     else: # use more dp (implied default if a prefix is specified)
-        return rf"${val:.{-i+1}f}$ ± ${err:.{-i+1}f}$"
+        return rf"${val:.{max(-i+1,0)}f}$ ± ${err:.{max(-i+1,0)}f}$"
