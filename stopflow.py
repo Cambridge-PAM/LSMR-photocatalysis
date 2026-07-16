@@ -9,9 +9,7 @@ from matplotlib import colors as colors
 
 ev = (r"[EV$^{+\!\cdot\!}$]", r"[EV$^{2\!+\!}$]$_0$", 600, 1.22e6, 700e-6)
 bv = (r"[BV$^{+\!\cdot\!}$]", r"[BV$^{2\!+\!}$]$_0$", 535, 1.4e6, 700e-6)
-
-arxn = 50e-6/0.7e-3 # m-2, microfluidic 50 ul chip with depth 0.7 mm
-adetector = np.pi*(9.5e-3/2)**2 # m-2, area of thorlabs power meter detector
+area = np.pi*(9.5e-3/2)**2 # m-2, area of thorlabs power meter detector
 
 # simple selector to determine which viologen labels and values to use 
 def viologen(x):
@@ -27,26 +25,25 @@ def concvstimeplot(data, t, c0, x, film, light, wavelength, power,
     XV, XV0, peak, e, l = viologen(x)
     c = concvstimepoints(data, peak, e, l)
     cscale = [conc*1e3 for conc in c] # plot concentrations in mM
-    n = molphotonpers(power, wavelength, arxn/adetector) # moles of photon per second
+    n = photons(power, wavelength, l*area*1e3) # M s-1 of photons
 
     fig, ax = plt.subplots()
     ax.plot(t, cscale, 'x', color='black')
+    fit, i = linreg(t, c, istart=istart, iend=iend, i=i, r2threshold=r2threshold, interceptthreshold=interceptthreshold)
+    x = np.linspace(t[0], t[i], 100) # plot linear regression line over the initial linear region
+    y = (fit.slope*x + fit.intercept)*1e3
+    ax.plot(x, y, color='black')
+    ax.text(0.95, 0.05,
+            rf'$\Phi$ = $\mathrm{{\frac{{rate_{{reaction}}}}{{rate_{{photon}}}}}}$ = {errformat(fit.slope/n, fit.stderr/n, 1e-2)} %''\n'
+            rf'$k$ = {errformat(fit.slope/c0, fit.stderr/c0, prefix=1e-6)} $\times$ 10$^{{-6}}$ s$^{{-1}}$''\n'
+            rf'rate = slope = {errformat(fit.slope, fit.stderr, prefix=1e-6)} $\mathrm{{\mu}}$M s$^{{-1}}$''\n'
+            f'intercept = {errformat(fit.intercept, fit.intercept_stderr, prefix=1e-3)} mM\n'
+            f'$r^2$ = {fit.rvalue**2:.3f}',
+            transform=ax.transAxes, ha="right", va="bottom")
 
     fig.canvas.draw() # calculate ticks preliminarily
     xscale = np.diff(ax.get_xticks())[0]
     yscale = np.diff(ax.get_yticks())[0]
-
-    fit, i = linreg(t, c, istart=istart, iend=iend, i=i, r2threshold=r2threshold, interceptthreshold=interceptthreshold)
-    x = np.linspace(t[0]-10, t[i]+10, 100) # plot linear regression line over the initial linear region
-    y = (fit.slope*x + fit.intercept)*1e3
-    ax.plot(x, y, color='black')
-    ax.text(0.95, 0.05,
-            rf'$k$ = {errformat(fit.slope/c0, fit.stderr/c0, prefix=1e-6)} $\times$ 10$^{{-6}}$ s$^{{-1}}$''\n'
-            rf'$\it{{\Phi}}$ = $\mathrm{{\frac{{rate_{{reaction}}}}{{rate_{{photon}}}}}}$ = {errformat(fit.slope/n, fit.stderr/n, 1e-2)} %''\n'
-            rf'rate = slope = {errformat(fit.slope, fit.stderr, prefix=1e-6)} $\mathrm{{\mu}}$M s$^{{-1}}$''\n'
-            f'intercept = {errformat(fit.intercept, fit.intercept_stderr, prefix=1e-3)} mM\n'
-            f'$r^2$ = {fit.rvalue**2:.3f}',
-            transform=plt.gca().transAxes, ha="right", va="bottom")
 
     ax.set_xlim(np.floor(min(t)/xscale)*xscale, np.ceil(max(t)/xscale)*xscale)
     ax.set_ylim(min(np.floor((min(cscale)-0.2*yscale)/yscale)*yscale, 0), np.ceil((max(cscale)+0.2*yscale)/yscale)*yscale)
@@ -63,25 +60,24 @@ def lncvstimeplot(data, t, c0, x, film, light, wavelength, power,
     XV, XV0, peak, e, l = viologen(x)
     c = concvstimepoints(data, peak, e, l)
     lnc = [np.log(c0-conc) for conc in c]
-    n = molphotonpers(power, wavelength, arxn/adetector) # moles of photon per second
+    n = photons(power, wavelength, l*area*1e3) # M s-1 of photons
     
     fig, ax = plt.subplots()
     ax.plot(t, lnc, 'x', color='black')
+    fit, i = linreg(t, lnc, istart=istart, iend=iend, i=i, r2threshold=r2threshold, interceptthreshold=interceptthreshold)
+    x = np.linspace(t[0], t[i], 100) # plot linear regression line over the initial linear region
+    y = (fit.slope*x + fit.intercept)
+    ax.plot(x, y, color='black')
+    ax.text(0.95, 0.95,
+            rf'$\Phi$ = $\mathrm{{\frac{{rate_{{reaction}}}}{{rate_{{photon}}}}}}$ = {errformat(-fit.slope*c0/n, fit.stderr*c0/n, 1e-2)} %''\n'
+            rf'$k$ = $-$slope = {errformat(-fit.slope, fit.stderr, prefix=1e-6)} $\times$ 10$^{{-6}}$ s$^{{-1}}$''\n'
+            f'intercept = {errformat(fit.intercept, fit.intercept_stderr, sci=False)}\n'
+            f'$r^2$ = {fit.rvalue**2:.3f}',
+            transform=ax.transAxes, ha="right", va="top")
 
     fig.canvas.draw() # calculate ticks preliminarily
     xscale = np.diff(ax.get_xticks())[0]
     yscale = np.diff(ax.get_yticks())[0]
-
-    fit, i = linreg(t, lnc, istart=istart, iend=iend, i=i, r2threshold=r2threshold, interceptthreshold=interceptthreshold)
-    x = np.linspace(t[0]-10, t[i]+10, 100) # plot linear regression line over the initial linear region
-    y = (fit.slope*x + fit.intercept)
-    ax.plot(x, y, color='black')
-    ax.text(0.95, 0.95,
-            rf'$k$ = $-$slope = {errformat(-fit.slope, fit.stderr, prefix=1e-6)} $\times$ 10$^{{-6}}$ s$^{{-1}}$''\n'
-            rf'$\it{{\Phi}}$ = $\mathrm{{\frac{{rate_{{reaction}}}}{{rate_{{photon}}}}}}$ = {errformat(-fit.slope*c0/n, fit.stderr*c0/n, 1e-2)} %''\n'
-            f'intercept = {errformat(fit.intercept, fit.intercept_stderr, sci=False)}\n'
-            f'$r^2$ = {fit.rvalue**2:.3f}',
-            transform=plt.gca().transAxes, ha="right", va="top")
 
     ax.set_xlim(np.floor(min(t)/xscale)*xscale, np.ceil(max(t)/xscale)*xscale)
     ax.set_ylim(np.floor((min(lnc)-0.2*yscale)/yscale)*yscale, np.ceil((max(lnc)+0.2*yscale)/yscale)*yscale)

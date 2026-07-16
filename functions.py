@@ -82,12 +82,12 @@ def flowprop(flowrate=None, tR=None, vol=None):
         print("Error: two of the three parameters (flowrate, tR, vol) needed to calculate the missing one.")
         return None
 
-# return the moles of photon per second for a given power(W) and wavelength(m) of light, with area ratio of reactor/detector
-def molphotonpers(power, wavelength, arearatio):
+# return M s-1 of photons for a given power(W) and wavelength(m) and volume(L)
+def photons(power, wavelength, volume):
     h = constants.physical_constants['Planck constant'][0]
     c = constants.physical_constants['speed of light in vacuum'][0]
     n = constants.physical_constants['Avogadro constant'][0]
-    return arearatio*power/(n*h*c/wavelength)
+    return power/(volume*n*h*c/wavelength)
 
 # return the elapsed time between two timestamps in the format hh-mm-ss-ms.
 def elapsed(start, end):
