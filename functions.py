@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats as stats
+import scipy.constants as constants
 from pathlib import Path
 
 # provide three of the four parameters (a, e(L mol-1 m-1), c(mol/L), l(m)) to calculate the missing one for the Beer-Lambert law.
@@ -80,6 +81,13 @@ def flowprop(flowrate=None, tR=None, vol=None):
     except:
         print("Error: two of the three parameters (flowrate, tR, vol) needed to calculate the missing one.")
         return None
+
+# return the moles of photon per second for a given power(W) and wavelength(m) of light, with area ratio of reactor/detector
+def molphotonpers(power, wavelength, arearatio):
+    h = constants.physical_constants['Planck constant'][0]
+    c = constants.physical_constants['speed of light in vacuum'][0]
+    n = constants.physical_constants['Avogadro constant'][0]
+    return arearatio*power/(n*h*c/wavelength)
 
 # return the elapsed time between two timestamps in the format hh-mm-ss-ms.
 def elapsed(start, end):
@@ -208,11 +216,7 @@ def spectrumvstime(data, start="", end="", duration=1e10):
             with f.open("r") as file:
                 readspectrum(file, l, a)
     
-    t = np.asarray(t) # convert list of time points to numpy array
-    l = np.asarray(l) # convert list of wavelengths to numpy array
-    a = np.array(a).T # convert list of absorbances to numpy array and transpose to have wavelengths as rows and time points as columns
-    
-    return t, l, a
+    return np.asarray(t), np.asarray(l), np.array(a).T # convert lists to numpy array and transpose a to have wavelengths as rows and time points as columns
 
 # uv-vis absorbance spectrum at given time points (in seconds) from oceanoptics data
 def spectrumvstimepoints(data, points=None, start=""):
@@ -237,7 +241,7 @@ def spectrumvstimepoints(data, points=None, start=""):
             with f.open("r") as file:
                 readspectrum(file, l, a)
 
-    return l, a
+    return np.asarray(l), np.asarray(a)
 
 # extract uv-vis absorption spectrum from oceanoptics data
 def spectrum(data):
@@ -255,7 +259,7 @@ def spectrum(data):
     
     return l, a
 
-# running linear regression analysis, starts selecting points from i0, adds more points until r2 and intercept exceed threshold
+# running linear regression analysis, starts selecting points from istart, adds more points until iend or r2 and intercept exceed threshold
 def linreg(t, c, istart=1, iend=1e10, i=None, r2threshold=0, interceptthreshold=1e10):
     if iend == 1e10:
         iend = len(t)-1
@@ -266,7 +270,7 @@ def linreg(t, c, istart=1, iend=1e10, i=None, r2threshold=0, interceptthreshold=
         fit = stats.linregress(t[:i+1], c[:i+1])
         if fit.rvalue**2 <= r2threshold or abs(fit.intercept) >= abs(interceptthreshold): # stop when r2 or intercept exceeds thresholds
             fit = stats.linregress(t[:i], c[:i]) # return the last fit
-            break
+            return fit, i
     return fit, i
 
 # format numbers and error to appropriate decimal places
