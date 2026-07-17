@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm as cm
 from matplotlib import colors as colors
 
-# stop flow with reaction in 50 ul chip and PtOEP/DPA film
+# stop flow with reaction in 50 ul chip (and film if any)
 # irradiation at each time point, then uv-vis immediately after in the same chip
 # flushed with fresh starting reaction mixture and repeated for new time point
 
