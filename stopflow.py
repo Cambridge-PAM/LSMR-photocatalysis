@@ -25,7 +25,7 @@ def concvstimeplot(data, t, c0, x, film, light, wavelength, power,
     XV, XV0, peak, e, l = viologen(x)
     c = concvstimepoints(data, peak, e, l)
     cscale = [conc*1e3 for conc in c] # plot concentrations in mM
-    n = photons(power, wavelength, l*area*1e3) # M s-1 of photons
+    n = ratephotons(power, wavelength, l*area*1e3) # M s-1 of photons
 
     fig, ax = plt.subplots()
     ax.plot(t, cscale, 'x', color='black')
@@ -60,7 +60,7 @@ def lncvstimeplot(data, t, c0, x, film, light, wavelength, power,
     XV, XV0, peak, e, l = viologen(x)
     c = concvstimepoints(data, peak, e, l)
     lnc = [np.log(c0-conc) for conc in c]
-    n = photons(power, wavelength, l*area*1e3) # M s-1 of photons
+    n = ratephotons(power, wavelength, l*area*1e3) # M s-1 of photons
     
     fig, ax = plt.subplots()
     ax.plot(t, lnc, 'x', color='black')

@@ -83,7 +83,7 @@ def flowprop(flowrate=None, tR=None, vol=None):
         return None
 
 # return M s-1 of photons for a given power(W) and wavelength(m) and volume(L)
-def photons(power, wavelength, volume):
+def ratephotons(power, wavelength, volume):
     h = constants.physical_constants['Planck constant'][0]
     c = constants.physical_constants['speed of light in vacuum'][0]
     n = constants.physical_constants['Avogadro constant'][0]
