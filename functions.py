@@ -124,12 +124,11 @@ def concvstime(data, peak, e, l, start="", end="", duration=1e10, pwidth=10):
 
     a = [] # array of absorbances
     t = [] # array of time in seconds
-
     read = False
 
-    for f in Path(data).glob('*.txt'):
+    for f in sorted(Path(data).glob('*.txt'), key=lambda f: f.stem[-12:]): # sort files by timestamp
         timestamp = f.stem[-12:]
-        if start == "": 
+        if start == "":
             start = timestamp # if no start time defined, start with the first file
         
         time = elapsed(start, timestamp) # convert timestamp to time in seconds
@@ -195,10 +194,9 @@ def spectrumvstime(data, start="", end="", duration=1e10):
     t = [] # time in seconds
     l = [] # wavelengths
     a = [] # absorbances
-
     read = False
 
-    for f in Path(data).glob('*.txt'):
+    for f in sorted(Path(data).glob('*.txt'), key=lambda f: f.stem[-12:]): # sort files by timestamp
         timestamp = f.stem[-12:]
         if start == "":
             start = timestamp # if no start time defined, start with the first file
