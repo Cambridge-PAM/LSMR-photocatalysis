@@ -111,7 +111,7 @@ def lncvstimeplot(data, v, start, x, duration=1e10, reg=True,
 # uv-vis absorption spectrum over time for each run
 def spectrumvstimeplot(data, v, start, x, duration=1e10, lmin=450, lmax=700, vmin=None, vmax=None):
 
-    _, X0, _, _, _ = species(x)
+    X, X0, _, _, _ = species(x)
     c0 = solprop(cstock=cstock, valiquot=v*1e-6, vsol=vsol) # initial concentration
     t, l, a = spectrumvstime(data, start=start, duration=duration)
     mask = (lmin <= l) & (l <= lmax) 
@@ -139,16 +139,17 @@ def spectrumvstimeplot(data, v, start, x, duration=1e10, lmin=450, lmax=700, vmi
     xmax = np.ceil(max(t)/xscale)*xscale
 
     ax.set_xlim(xmin, xmax)
+    ax.set_xticks(np.arange(xmin, xmax+abs(0.001*xmax), xscale))
     ax.set_ylim(lmin, lmax)
     ax.set_xlabel("time / s")
     ax.set_ylabel(r'$\lambda$ / nm')
-    ax.set_title(rf"UV-Vis absorbance spectra over time / s for {X0} = {c0*1e6:.0f} μM")
+    ax.set_title(rf"UV-Vis spectra of {X} over time / s for {X0} = {c0*1e6:.0f} μM")
     plt.show()
 
 # uv-vis absorption spectrum at time t for each run
 def spectrumvsconcplot(root, runs, x, t, lmin=450, lmax=700):
 
-    _, X0, _, _, _ = species(x)
+    X, X0, _, _, _ = species(x)
     fig, ax = plt.subplots(figsize=(8,5))
     cmap = plt.get_cmap("viridis_r")
     col = cmap(np.linspace(0, 1, len(runs)))
@@ -176,9 +177,10 @@ def spectrumvsconcplot(root, runs, x, t, lmin=450, lmax=700):
     yscale = np.diff(ax.get_yticks())[0]
     ymax = np.ceil((amax+0.2*yscale)/yscale)*yscale
 
-    ax.set_title(f'UV-Vis absorbance spectra after {t/60} min irradiation')
     ax.set_xlim(lmin, lmax)
     ax.set_ylim(0, ymax)
+    ax.set_yticks(np.arange(0, ymax+abs(0.001*ymax), yscale))
     ax.set_xlabel(r'$\lambda$ / nm')
     ax.set_ylabel(r'absorbance')
+    ax.set_title(f'UV-Vis spectra of {X} after {t/60} min of irradiation')
     plt.show()

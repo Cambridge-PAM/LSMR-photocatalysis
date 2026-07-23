@@ -44,9 +44,15 @@ def concvstimeplot(data, t, c0, x, film, light, wavelength, power,
     fig.canvas.draw() # calculate ticks preliminarily
     xscale = np.diff(ax.get_xticks())[0]
     yscale = np.diff(ax.get_yticks())[0]
+    xmin = np.floor(min(t)/xscale)*xscale
+    xmax = np.ceil(max(t)/xscale)*xscale
+    ymin = min(np.floor((min(cscale)-0.2*yscale)/yscale)*yscale, 0)
+    ymax = np.ceil((max(cscale)+0.2*yscale)/yscale)*yscale
 
-    ax.set_xlim(np.floor(min(t)/xscale)*xscale, np.ceil(max(t)/xscale)*xscale)
-    ax.set_ylim(min(np.floor((min(cscale)-0.2*yscale)/yscale)*yscale, 0), np.ceil((max(cscale)+0.2*yscale)/yscale)*yscale)
+    ax.set_xlim(xmin, xmax)
+    ax.set_xticks(np.arange(xmin, xmax+abs(0.001*xmax), xscale))
+    ax.set_ylim(ymin, ymax)
+    ax.set_yticks(np.arange(ymin, ymax+abs(0.001*ymax), yscale))
     ax.set_xlabel(r'time / s')
     ax.set_ylabel(rf'{XV} / mM')
     ax.set_title(rf'{XV} / mM over time / s for {XV0} = {c0*1e3:.0f} mM''\n'
@@ -78,9 +84,15 @@ def lncvstimeplot(data, t, c0, x, film, light, wavelength, power,
     fig.canvas.draw() # calculate ticks preliminarily
     xscale = np.diff(ax.get_xticks())[0]
     yscale = np.diff(ax.get_yticks())[0]
+    xmin = np.floor(min(t)/xscale)*xscale
+    xmax = np.ceil(max(t)/xscale)*xscale
+    ymin = np.floor((min(lnc)-0.2*yscale)/yscale)*yscale
+    ymax = np.ceil((max(lnc)+0.2*yscale)/yscale)*yscale
 
-    ax.set_xlim(np.floor(min(t)/xscale)*xscale, np.ceil(max(t)/xscale)*xscale)
-    ax.set_ylim(np.floor((min(lnc)-0.2*yscale)/yscale)*yscale, np.ceil((max(lnc)+0.2*yscale)/yscale)*yscale)
+    ax.set_xlim(xmin, xmax)
+    ax.set_xticks(np.arange(xmin, xmax+abs(0.001*xmax), xscale))
+    ax.set_ylim(ymin, ymax)
+    ax.set_yticks(np.arange(ymin, ymax+abs(0.001*ymax), yscale))
     ax.set_xlabel(r'time / s')
     ax.set_ylabel(rf'ln({XV0}$-${XV} / M)')
     ax.set_title(rf'ln({XV0}$-${XV} / M) over time / s for {XV0} = {c0*1e3:.0f} mM''\n'
@@ -88,16 +100,15 @@ def lncvstimeplot(data, t, c0, x, film, light, wavelength, power,
     plt.show()
 
 # absorbance spectra for each t
-def spectrumvstimeplot(data, t, c0, x, film, light, wavelength, power):
+def spectrumvstimeplot(data, t, c0, x, film, light, wavelength, power, lmin=450, lmax=700):
 
-    XV, XV0, _, _, _ = viologen(x)
-
+    _, XV0, _, _, _ = viologen(x)
     fig, ax = plt.subplots(figsize=(8, 5))
     cmap = plt.get_cmap("viridis_r")
     col = cmap(np.linspace(0, 1, len(t)))
 
     l, a = spectrumvstimepoints(data)
-    mask = (l >= 450) & (l <= 700)
+    mask = (lmin <= l) & (l <= lmax)
     l = l[mask]
     a = a[:, mask]
 
@@ -106,7 +117,6 @@ def spectrumvstimeplot(data, t, c0, x, film, light, wavelength, power):
 
     norm = colors.Normalize(0, len(t)-1)
     sm = cm.ScalarMappable(norm=norm, cmap=cmap)
-
     cbar = fig.colorbar(sm, ax=ax)
     cbar.set_ticks(range(len(t)))
     cbar.set_ticklabels(np.asarray(t)/60)
@@ -114,9 +124,13 @@ def spectrumvstimeplot(data, t, c0, x, film, light, wavelength, power):
 
     fig.canvas.draw() # calculate ticks preliminarily
     yscale = np.diff(ax.get_yticks())[0]
+    ymax = np.ceil((np.max(a)+0.2*yscale)/yscale)*yscale
 
-    ax.set(xlim=(450, 700), ylim=(0, np.ceil((np.max(a)+0.2*yscale)/yscale)*yscale),
-           xlabel=r'$\lambda$ / nm', ylabel='absorbance')
+    ax.set_xlim(lmin, lmax)
+    ax.set_ylim(0, ymax)
+    ax.set_yticks(np.arange(0, ymax+abs(0.001*ymax), yscale))
+    ax.set_xlabel(r'$\lambda$ / nm')
+    ax.set_ylabel('absorbance')
     ax.set_title(rf'UV-Vis spectra over time for {XV0} = {c0*1e3:.0f} mM''\n'
                  rf'with {film} film under {light} ({int(wavelength*1e9)} nm) light at {power*1e3:.1f} mW')
     plt.show()

@@ -178,6 +178,7 @@ def concvstimepoints(data, peak, e, l, points=None, start="", pwidth=10, twidth=
     c = [beerlambert(a=absorbance, e=e, l=l) for absorbance in a] # convert absorbance to concentration using Beer-Lambert law
     return c
 
+# reads the uv-vis spectrum and appends data to wavelengths l and absorbances a
 def readspectrum(file, l, a):
     a.append([]) # list of absorbances for this time point
     for line in file:
