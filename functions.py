@@ -165,16 +165,17 @@ def concvstimepoints(data, peak, e, l, points=None, start="", pwidth=10, twidth=
             time = int(elapsed(start, timestamp)) # convert timestamp to time in seconds
             
             if time in points:
-                for j in range(-twidth//2, twidth//2 + 1): # search for absorbance peak in files within twidth seconds of timestamp
+                absorbances = []
+                for j in range(-twidth//2 + 1, twidth//2 + 1): # search for absorbance peak in files within twidth seconds of timestamp
                     with files[i+j].open("r") as file:
-                        absorbances = readpeak(file, peak, pwidth)
+                        absorbances += readpeak(file, peak, pwidth)
                 a.append(sum(absorbances)/len(absorbances)) # average the absorbances
 
         else: # read all files
             with files[i].open("r") as file:
                 absorbances = readpeak(file, peak, pwidth)
                 a.append(sum(absorbances)/len(absorbances)) # average the absorbances
-    
+
     c = [beerlambert(a=absorbance, e=e, l=l) for absorbance in a] # convert absorbance to concentration using Beer-Lambert law
     return c
 
