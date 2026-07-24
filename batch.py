@@ -124,7 +124,7 @@ def spectrumvstimeplot(data, v, start, x, duration=1e10, lmin=450, lmax=700, vmi
         vmax = np.ceil(a.max()/0.1)*0.1 # round up to nearest 0.1
     
     fig, ax = plt.subplots(figsize=(8,3))
-    cmap = plt.get_cmap("viridis")
+    cmap = plt.get_cmap("viridis_r")
     ax.contourf(t, l, a, levels=100, vmin=vmin, vmax=vmax, cmap=cmap)
 
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
