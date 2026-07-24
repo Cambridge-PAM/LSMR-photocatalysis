@@ -8,9 +8,19 @@ from matplotlib import colors as colors
 # flushed with fresh starting reaction mixture and repeated for new time point
 
 tR = "$t_\\mathrm{R}$" # tR
+evold = (r"[EV$^{+\!\cdot\!}$]", r"[EV$^{2\!+\!}$]$_0$", 600, 1.22e6, 700e-6)
 ev = (r"[EV$^{+\!\cdot\!}$]", r"[EV$^{2\!+\!}$]$_0$", 600, 1.22e6, 800e-6)
 bv = (r"[BV$^{+\!\cdot\!}$]", r"[BV$^{2\!+\!}$]$_0$", 535, 1.4e6, 800e-6)
 area = np.pi*(9.5e-3/2)**2 # m-2, area of thorlabs power meter detector
+
+# simple selector to determine which viologen labels and values to use 
+def viologen(x):
+    if x == 'E':
+        return ev
+    elif x == 'B':
+        return bv
+    elif x == 'Eold':
+        return evold
 
 # time points in s to record absorbances
 def timepoints(tRs, tbuffer, vrxn, vfull):
@@ -23,13 +33,6 @@ def timepoints(tRs, tbuffer, vrxn, vfull):
             prevtime = points[-1] + tbuffer
         points.append(int((prevtime + flowprop(flowrate=flowrates[i], vol=vfull) + tbuffer)))
     return points
-
-# simple selector to determine which viologen labels and values to use 
-def viologen(x):
-    if x == 'E':
-        return ev
-    elif x == 'B':
-        return bv
 
 # concentration vs time point plot with linear regression
 def concvstimeplot(data, tRs, points, start, c0, x, film, light, wavelength, power,
