@@ -22,11 +22,10 @@ def species(x):
         return rubpy
 
 # concentration vs time plot with linear regression
-def concvstimeplot(data, v, start, x, duration=1e10, reg=True,
+def concvstimeplot(data, c0, start, x, duration=1e10, reg=True, new=False,
                    istart=1, iend=1e10, i=None, r2threshold=0, interceptthreshold=1e10):
 
     X, X0, peak, e, l = species(x)
-    c0 = solprop(cstock=cstock, valiquot=v*1e-6, vsol=vsol) # initial concentration
     t, c = concvstime(data, peak, e, l, start=start, duration=duration)
     cscale = [conc*1e6 for conc in c] # plot concentrations in μM
 
@@ -63,15 +62,19 @@ def concvstimeplot(data, v, start, x, duration=1e10, reg=True,
     ax.set_yticks(np.arange(ymin, ymax+abs(0.001*ymax), yscale))
     ax.set_xlabel(r'time / s')
     ax.set_ylabel(rf'{X} / μM')
-    ax.set_title(rf'{X} / μM over time / s for {X0} = {c0*1e6:.0f} μM')
+    if new:
+        ax.set_title(rf'{X} / μM over time / s for {X0} = {c0*1e6:.0f} μM''\n' 
+                     rf'with {100*0.03e-3/c0:.0f} mol% fluorescein under blue (455 nm) light')
+    else:
+        ax.set_title(rf'{X} / μM over time / s for {X0} = {c0*1e6:.0f} μM''\n'
+                     rf'with 67 μM {rubpy[0]} under blue (455 nm) light')
     plt.show()
 
 # lnc vs time plot for a first order reaction with linear regression
-def lncvstimeplot(data, v, start, x, duration=1e10, reg=True,
+def lncvstimeplot(data, c0, start, x, duration=1e10, reg=True, new=False,
                   istart=1, iend=1e10, i=None, r2threshold=0, interceptthreshold=1e10):
 
     X, X0, peak, e, l = species(x)
-    c0 = solprop(cstock=cstock, valiquot=v*1e-6, vsol=vsol) # initial concentration
     t, c = concvstime(data, peak, e, l, start=start, duration=duration)
     lnc = [np.log(c0-conc) for conc in c]
 
@@ -105,14 +108,19 @@ def lncvstimeplot(data, v, start, x, duration=1e10, reg=True,
     ax.set_yticks(np.arange(ymin, ymax+abs(0.001*ymax), yscale))
     ax.set_xlabel(r'time / s')
     ax.set_ylabel(rf'ln({X0}$-${X} / M)')
-    ax.set_title(rf'ln({X0}$-${X} / M) over time / s for {X0} = {c0*1e6:.0f} μM')
+    if new:
+        ax.set_title(rf'ln({X0}$-${X} / M) over time / s for {X0} = {c0*1e6:.0f} μM''\n' 
+                     rf'with {100*0.03e-3/c0:.0f} mol% fluorescein under blue (455 nm) light')
+    else:
+        ax.set_title(rf'ln({X0}$-${X} / M) over time / s for {X0} = {c0*1e6:.0f} μM''\n'
+                     rf'with 67 μM {rubpy[0]} under blue (455 nm) light')
     plt.show()
 
 # uv-vis absorption spectrum over time for each run
-def spectrumvstimeplot(data, v, start, x, duration=1e10, lmin=450, lmax=700, vmin=None, vmax=None):
+def spectrumvstimeplot(data, c0, start, x, duration=1e10, new=False, 
+                       lmin=450, lmax=700, vmin=None, vmax=None):
 
     X, X0, _, _, _ = species(x)
-    c0 = solprop(cstock=cstock, valiquot=v*1e-6, vsol=vsol) # initial concentration
     t, l, a = spectrumvstime(data, start=start, duration=duration)
     mask = (lmin <= l) & (l <= lmax) 
     a = a[mask, :]
@@ -143,11 +151,17 @@ def spectrumvstimeplot(data, v, start, x, duration=1e10, lmin=450, lmax=700, vmi
     ax.set_ylim(lmin, lmax)
     ax.set_xlabel("time / s")
     ax.set_ylabel(r'$\lambda$ / nm')
-    ax.set_title(rf"UV-Vis spectra of {X} over time / s for {X0} = {c0*1e6:.0f} μM")
+    ax.set_title(rf"UV-Vis spectra of {X[1:-1]} over time / s for {X0} = {c0*1e6:.0f} μM")
+    if new:
+        ax.set_title(rf'UV-Vis spectra of {X[1:-1]} over time / s for {X0} = {c0*1e6:.0f} μM''\n' 
+                     rf'with {100*0.03e-3/c0:.0f} mol% fluorescein under blue (455 nm) light')
+    else:
+        ax.set_title(rf'UV-Vis spectra of {X[1:-1]} over time / s for {X0} = {c0*1e6:.0f} μM''\n'
+                     rf'with 67 μM {rubpy[0]} under blue (455 nm) light')
     plt.show()
 
 # uv-vis absorption spectrum at time t for each run
-def spectrumvsconcplot(root, runs, x, t, lmin=450, lmax=700):
+def spectrumvsconcplot(root, runs, x, t, lmin=450, lmax=700, new=False, setzero=True):
 
     X, X0, _, _, _ = species(x)
     fig, ax = plt.subplots(figsize=(8,5))
@@ -155,8 +169,12 @@ def spectrumvsconcplot(root, runs, x, t, lmin=450, lmax=700):
     col = cmap(np.linspace(0, 1, len(runs)))
 
     amax = 0
-    for i, (v, start) in enumerate(runs): # exclude the run on 260625 which did not include Rubpy in background measurement
-        data = f'{root}{v}_EDTA_Buffered'
+    amin = 0
+    for i, (v, start) in enumerate(runs):
+        if new:
+            data = f'{root}{v}' # new filename format
+        else:
+            data = f'{root}{v}_EDTA_Buffered' # old filename format
         l, a = spectrumvstimepoints(data, [t], start=start)
         mask = (lmin <= l) & (l <= lmax)
         l = l[mask]
@@ -165,22 +183,32 @@ def spectrumvsconcplot(root, runs, x, t, lmin=450, lmax=700):
         
         if np.max(a) > amax:
             amax = np.max(a)
+        if np.min(a) < amin:
+            amin = np.min(a)
 
     norm = colors.Normalize(vmin=0, vmax=len(runs)-1)
     sm = cm.ScalarMappable(norm=norm, cmap=cmap)
     cbar = plt.colorbar(sm, ax=ax)
     cbar.set_ticks(range(len(runs)))
-    cbar.set_ticklabels([f'{solprop(cstock=cstock, valiquot=v*1e-6, vsol=vsol)*1e6:.0f}' for v, _ in runs])
-    cbar.set_label(f"{X0} / μM")
+    if new:
+        cbar.set_ticklabels([f'{p}' for p, _ in runs])
+        cbar.set_label(f"[fluorescein] / mol%")
+    else:
+        cbar.set_ticklabels([f'{solprop(cstock=cstock, valiquot=v*1e-6, vsol=vsol)*1e6:.0f}' for v, _ in runs])
+        cbar.set_label(f"{X0} / μM")
 
     fig.canvas.draw() # calculate ticks preliminarily
     yscale = np.diff(ax.get_yticks())[0]
     ymax = np.ceil((amax+0.2*yscale)/yscale)*yscale
-
+    if setzero:
+        ymin = 0
+    else:
+        ymin = np.ceil((amin-0.2*yscale)/yscale)*yscale
+    
     ax.set_xlim(lmin, lmax)
-    ax.set_ylim(0, ymax)
-    ax.set_yticks(np.arange(0, ymax+abs(0.001*ymax), yscale))
+    ax.set_ylim(ymin, ymax)
+    ax.set_yticks(np.arange(ymin, ymax+abs(0.001*ymax), yscale))
     ax.set_xlabel(r'$\lambda$ / nm')
     ax.set_ylabel(r'absorbance')
-    ax.set_title(f'UV-Vis spectra of {X} after {t/60} min of irradiation')
+    ax.set_title(f'UV-Vis spectra of {X[1:-1]} after {t/60:.0f} min under blue (455 nm) light')
     plt.show()
