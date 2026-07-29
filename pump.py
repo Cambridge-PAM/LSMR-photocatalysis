@@ -6,11 +6,11 @@ vrxn = 12*8.75*0.8 # reaction volume under light in ul
 vfull = 250 # full cell volume in ul
 tbuffer = 30 # time in s after the solution fully fills the cell before recording
 
-tRs = [tR*30 for tR in range(1, 11)] # residence times in s for 1-5 min in 30 s intervals
+tRs = [tR*60 for tR in range(1, 8)] # residence times in s for 1-7 min in 1 min intervals
 flowrates = [flowprop(tR=tR/60, vol=vrxn*1e-3) for tR in tRs] # flow rates in ml/min for each tR
 points = flowpoints(tRs, tbuffer, vrxn, vfull) # time points in s to record absorbances
 
-with Port('COM1') as port:
+with Port('COM4') as port:
     pump = Pump(port)
 
     try:
