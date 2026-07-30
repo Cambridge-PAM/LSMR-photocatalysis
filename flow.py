@@ -68,15 +68,15 @@ def concvstimeplot(data, tRs, points, start, c0, x, film, light, wavelength, pow
     fig.canvas.draw() # calculate ticks preliminarily
     xscale = np.diff(ax.get_xticks())[0]
     yscale = np.diff(ax.get_yticks())[0]
-    xmin = np.floor(min(tRs)/xscale)*xscale
-    xmax = np.ceil(max(tRs)/xscale)*xscale
-    ymin = min(np.floor((min(cscale)-0.2*yscale)/yscale)*yscale, 0)
+    xmin = np.floor((min(tRs)-0.2*xscale)/xscale)*xscale
+    xmax = np.ceil((max(tRs)+0.2*xscale)/xscale)*xscale
+    ymin = np.floor((min(cscale)-0.2*yscale)/yscale)*yscale
     ymax = np.ceil((max(cscale)+0.2*yscale)/yscale)*yscale
 
     ax.set_xlim(xmin, xmax)
-    ax.set_xticks(np.arange(xmin, xmax+abs(0.0001*xmax), xscale))
+    ax.set_xticks(np.arange(xmin, xmax+abs(0.00001*xmax), xscale))
     ax.set_ylim(ymin, ymax)
-    ax.set_yticks(np.arange(ymin, ymax+abs(0.0001*ymax), yscale))
+    ax.set_yticks(np.arange(ymin, ymax+abs(0.00001*ymax), yscale))
     ax.set_xlabel(rf'{tR} / s')
     ax.set_ylabel(rf'{XV} / mM')
     ax.set_title(rf'{XV} / mM against {tR} / s for {XV0} = {c0*1e3:.0f} mM''\n'
@@ -108,15 +108,15 @@ def lncvstimeplot(data, tRs, points, start, c0, x, film, light, wavelength, powe
     fig.canvas.draw() # calculate ticks preliminarily
     xscale = np.diff(ax.get_xticks())[0]
     yscale = np.diff(ax.get_yticks())[0]
-    xmin = np.floor(min(tRs)/xscale)*xscale
-    xmax = np.ceil(max(tRs)/xscale)*xscale
+    xmin = np.floor((min(tRs)-0.2*xscale)/xscale)*xscale
+    xmax = np.ceil((max(tRs)+0.2*xscale)/xscale)*xscale
     ymin = np.floor((min(lnc)-0.2*yscale)/yscale)*yscale
     ymax = np.ceil((max(lnc)+0.2*yscale)/yscale)*yscale
 
     ax.set_xlim(xmin, xmax)
-    ax.set_xticks(np.arange(xmin, xmax+abs(0.0001*xmax), xscale))
+    ax.set_xticks(np.arange(xmin, xmax+abs(0.00001*xmax), xscale))
     ax.set_ylim(ymin, ymax)
-    ax.set_yticks(np.arange(ymin, ymax+abs(0.0001*ymax), yscale))
+    ax.set_yticks(np.arange(ymin, ymax+abs(0.00001*ymax), yscale))
     ax.set_xlabel(rf'{tR} / s')
     ax.set_ylabel(rf'ln({XV0}$-${XV} / M)')
     ax.set_title(rf'ln({XV0}$-${XV} / M) against {tR} / s for {XV0} = {c0*1e3:.0f} mM''\n'
@@ -183,12 +183,6 @@ def detectorspectrumplot(data, points, start, c0, x, film, light, wavelength, po
     cbar.set_label("absorbance")
 
     fig.canvas.draw() # calculate ticks preliminarily
-    # xscale = np.diff(ax.get_xticks())[0]
-    # xmin = np.floor(min(t)/xscale)*xscale
-    # xmax = np.ceil(max(t)/xscale)*xscale
-
-    # ax.set_xlim(xmin, xmax)
-    # ax.set_xticks(np.arange(xmin, xmax+abs(0.0001*xmax), xscale))
     ax.set_ylim(lmin, lmax)
     ax.set_xlabel("time / s")
     ax.set_ylabel(r'$\lambda$ / nm')
@@ -196,7 +190,7 @@ def detectorspectrumplot(data, points, start, c0, x, film, light, wavelength, po
                  rf'with {film} film under {light} ({int(wavelength*1e9)} nm) light at {power*1e3:.1f} mW')
     plt.show()
 
-# absorbance spectra for each t
+# absorbance spectra for each tR
 def spectrumvstimeplot(data, tRs, points, start, c0, x, film, light, wavelength, power, 
                        lmin=450, lmax=700, setzero=True):
 
@@ -230,7 +224,7 @@ def spectrumvstimeplot(data, tRs, points, start, c0, x, film, light, wavelength,
     
     ax.set_xlim(lmin, lmax)
     ax.set_ylim(ymin, ymax)
-    ax.set_yticks(np.arange(0, ymax+abs(0.0001*ymax), yscale))
+    ax.set_yticks(np.arange(ymin, ymax+abs(0.0001*ymax), yscale))
     ax.set_xlabel(r'$\lambda$ / nm')
     ax.set_ylabel('absorbance')
     ax.set_title(rf'UV-Vis spectra against {tR} / s for {XV0} = {c0*1e3:.0f} mM''\n'
