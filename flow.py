@@ -27,7 +27,7 @@ def flowpoints(tRs, tbuffer, vrxn, vfull):
     flowrates = [flowprop(tR=tR, vol=vrxn) for tR in tRs] # flow rates for each tR
     points = []
     for i in range(len(tRs)):
-        points.append(int(flowprop(flowrate=flowrates[i], vol=vfull) + 2*tbuffer))
+        points.append(round(flowprop(flowrate=flowrates[i], vol=vfull) + 2*tbuffer))
     return points
 
 # time points in s to record absorbances, cumulative from the start of experiment
@@ -39,7 +39,7 @@ def recpoints(tRs, tbuffer, vrxn, vfull):
             prevtime = 0
         else:
             prevtime = points[-1] + tbuffer
-        points.append(int(prevtime + flowprop(flowrate=flowrates[i], vol=vfull) + tbuffer))
+        points.append(round(prevtime + flowprop(flowrate=flowrates[i], vol=vfull) + tbuffer))
     return points
 
 # concentration vs time point plot with linear regression

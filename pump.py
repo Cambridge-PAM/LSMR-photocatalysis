@@ -35,8 +35,10 @@ def rs232():
 
         send('RESET')
         send('DIA 9.000')
+        start = time.perf_counter()
 
         for i in range(len(tRs)):
+            print(f'New flow rate = {flowrates[i]*1e3:.2f} ul/min for tR = {tRs[i]/60:.1f} min')
             if i == 0:
                 send('PHN 1')
                 send('FUN RAT')
@@ -45,8 +47,12 @@ def rs232():
                 send('RUN')
             else:
                 send(f'RAT {flowrates[i]}')
+            print(f'Elapsed time: {time.perf_counter()-start:.3f} s')
             time.sleep(points[i])
 
+        print("Experiment finished!")
+        print(f'Elapsed time: {time.perf_counter()-start:.3f} s')
+        
     except Exception as e:
         print(f'Pump error: {e}')
 
@@ -68,7 +74,7 @@ def nesplib():
             pump.run(False)
             for i in range(len(tRs)):
                 pump.pumping_rate_ml_per_min = flowrates[i]
-                print(f'New flow rate = {flowrates[i]*1e3:.2f} ul/min for tR = {tRs[i]/60} min')
+                print(f'New flow rate = {flowrates[i]*1e3:.2f} ul/min for tR = {tRs[i]/60:.1f} min')
                 time.sleep(points[i])
                 
         except Exception as e:
@@ -78,4 +84,4 @@ def nesplib():
             pump.stop()
             print(f'Pump stopped')
 
-rs232()
+# rs232()
