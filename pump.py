@@ -46,6 +46,7 @@ def rs232():
             if i == 0:
                 send(f'RAT {flowrates[i]} UM')
                 print()
+                print("Remember to have already started Ocean Optics data collection beforehand!")
                 input("Press ENTER and turn LED on simultaneously to start...")
                 send('RUN')
                 start = time.perf_counter()
