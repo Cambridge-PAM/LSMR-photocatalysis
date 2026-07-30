@@ -1,31 +1,33 @@
-import time
-import serial
 from flow import *
-from nesp_lib import Port, Pump, PumpingDirection
+import serial
+import time
+from datetime import datetime
 
 vrxn = 12*8.75*0.8 # reaction volume under light in ul
 vfull = 250 # full cell volume in ul
 tbuffer = 30 # time in s after the solution fully fills the cell before recording
 
 tRs = [tR*60 for tR in range(1, 8)] # residence times in s for 1-7 min in 1 min intervals
-flowrates = [flowprop(tR=tR/60, vol=vrxn*1e-3) for tR in tRs] # flow rates in ml/min for each tR
+flowrates = [flowprop(tR=tR/60, vol=vrxn) for tR in tRs] # flow rates in ul/min for each tR
 points = flowpoints(tRs, tbuffer, vrxn, vfull) # time points in s to record absorbances
 
-print(tRs)
-print(flowrates)
-print(points)
+print()
+print(f'tRs (min): {[tR/60 for tR in tRs]}')
+print(f'Flowrates (ul/min): {flowrates}')
+print(f'Flowrate switch time intervals (s): {points}')
+print()
 
 com = 'COM4'
 
 # pump controls using rs-232 serial commands
 def rs232():
-    ser = serial.Serial(com, 19200, parity=serial.PARITY_NONE, bytesize=8, stopbits=1, 
-                    timeout=1, xonxoff=0, rtscts=0)
+    ser = serial.Serial(com, 19200, parity=serial.PARITY_NONE, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, 
+                    timeout=0.05, xonxoff=0, rtscts=0)
     print('Pump connected')
 
     try:
         def send(cmd):
-            ser.write((cmd + '\r\n').encode()) # send commands as encoded strings
+            ser.write((cmd + '\r').encode()) # send commands as encoded strings
             time.sleep(0.05)
             response = ser.readline().decode().strip()
             if response:
@@ -35,53 +37,38 @@ def rs232():
 
         send('RESET')
         send('DIA 9.000')
-        start = time.perf_counter()
+        send('DIR INF')
+        send('PHN 1')
+        send('FUN RAT')
 
         for i in range(len(tRs)):
-            print(f'New flow rate = {flowrates[i]*1e3:.2f} ul/min for tR = {tRs[i]/60:.1f} min')
+            print()
             if i == 0:
-                send('PHN 1')
-                send('FUN RAT')
-                send(f'RAT {flowrates[i]} MM')
-                send('DIR INF')
+                send(f'RAT {flowrates[i]} UM')
+                print()
+                input("Press ENTER and turn LED on simultaneously to start...")
                 send('RUN')
+                start = time.perf_counter()
             else:
                 send(f'RAT {flowrates[i]}')
-            print(f'Elapsed time: {time.perf_counter()-start:.3f} s')
-            time.sleep(points[i])
+            print()
+            print(f'New flow rate = {flowrates[i]:.2f} ul/min for tR = {tRs[i]/60:.1f} min (Run {i+1}/{len(tRs)})')
+            print(f'Elapsed time: {time.perf_counter()-start:.3f} s, Timestamp: {datetime.now().time()}')
+            time.sleep(points[i]-0.1)
 
         print("Experiment finished!")
         print(f'Elapsed time: {time.perf_counter()-start:.3f} s')
         
     except Exception as e:
+        print()
         print(f'Pump error: {e}')
 
     finally:
+        print()
         send('STP')
         print(f'Pump stopped')
+        print(f'Elapsed time: {time.perf_counter()-start:.3f} s, Timestamp: {datetime.now().time()}')
+        print()
         ser.close()
 
-# pump controls using nesp-lib
-def nesplib():
-    with Port(com) as port:
-        pump = Pump(port)
-        print('Pump connected')
-
-        try:
-            pump.syringe_diameter_mm = 9.000
-            pump.pumping_direction = PumpingDirection.INFUSE
-
-            pump.run(False)
-            for i in range(len(tRs)):
-                pump.pumping_rate_ml_per_min = flowrates[i]
-                print(f'New flow rate = {flowrates[i]*1e3:.2f} ul/min for tR = {tRs[i]/60:.1f} min')
-                time.sleep(points[i])
-                
-        except Exception as e:
-            print(f'Pump error: {e}')
-
-        finally:
-            pump.stop()
-            print(f'Pump stopped')
-
-# rs232()
+rs232()
