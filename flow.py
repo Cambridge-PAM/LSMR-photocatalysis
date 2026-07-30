@@ -123,42 +123,6 @@ def lncvstimeplot(data, tRs, points, start, c0, x, film, light, wavelength, powe
                  rf'with {film} film under {light} ({int(wavelength*1e9)} nm) light at {power*1e3:.1f} mW')
     plt.show()
 
-# absorbance spectra for each t
-def spectrumvstimeplot(data, tRs, points, start, c0, x, film, light, wavelength, power, lmin=450, lmax=700):
-
-    _, XV0, _, _, _ = viologen(x)
-    fig, ax = plt.subplots(figsize=(8, 5))
-    cmap = plt.get_cmap("viridis_r")
-    col = cmap(np.linspace(0, 1, len(tRs)))
-
-    l, a = spectrumvstimepoints(data, points=points, start=start)
-    mask = (lmin <= l) & (l <= lmax)
-    l = l[mask]
-    a = a[:, mask]
-
-    for i in range(len(tRs)):
-        ax.plot(l, a[i], color=col[i])
-
-    norm = colors.Normalize(0, len(tRs)-1)
-    sm = cm.ScalarMappable(norm=norm, cmap=cmap)
-    cbar = fig.colorbar(sm, ax=ax)
-    cbar.set_ticks(range(len(tRs)))
-    cbar.set_ticklabels(np.asarray(tRs)/60)
-    cbar.set_label(rf"{tR} / min")
-
-    fig.canvas.draw() # calculate ticks preliminarily
-    yscale = np.diff(ax.get_yticks())[0]
-    ymax = np.ceil((np.max(a)+0.2*yscale)/yscale)*yscale
-
-    ax.set_xlim(lmin, lmax)
-    ax.set_ylim(0, ymax)
-    ax.set_yticks(np.arange(0, ymax+abs(0.0001*ymax), yscale))
-    ax.set_xlabel(r'$\lambda$ / nm')
-    ax.set_ylabel('absorbance')
-    ax.set_title(rf'UV-Vis spectra against {tR} / s for {XV0} = {c0*1e3:.0f} mM''\n'
-                 rf'with {film} film under {light} ({int(wavelength*1e9)} nm) light at {power*1e3:.1f} mW')
-    plt.show()
-
 # plots what the uv-vis detector sees over the course of the whole run
 def detectorconcplot(data, points, start, c0, x, film, light, wavelength, power, duration=1e10):
 
@@ -229,5 +193,46 @@ def detectorspectrumplot(data, points, start, c0, x, film, light, wavelength, po
     ax.set_xlabel("time / s")
     ax.set_ylabel(r'$\lambda$ / nm')
     ax.set_title(rf"UV-Vis spectra of {XV} over time / s for {XV0} = {c0*1e3:.0f} mM""\n"
+                 rf'with {film} film under {light} ({int(wavelength*1e9)} nm) light at {power*1e3:.1f} mW')
+    plt.show()
+
+# absorbance spectra for each t
+def spectrumvstimeplot(data, tRs, points, start, c0, x, film, light, wavelength, power, 
+                       lmin=450, lmax=700, setzero=True):
+
+    _, XV0, _, _, _ = viologen(x)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    cmap = plt.get_cmap("viridis_r")
+    col = cmap(np.linspace(0, 1, len(tRs)))
+
+    l, a = spectrumvstimepoints(data, points=points, start=start)
+    mask = (lmin <= l) & (l <= lmax)
+    l = l[mask]
+    a = a[:, mask]
+
+    for i in range(len(tRs)):
+        ax.plot(l, a[i], color=col[i])
+
+    norm = colors.Normalize(0, len(tRs)-1)
+    sm = cm.ScalarMappable(norm=norm, cmap=cmap)
+    cbar = fig.colorbar(sm, ax=ax)
+    cbar.set_ticks(range(len(tRs)))
+    cbar.set_ticklabels(np.asarray(tRs)/60)
+    cbar.set_label(rf"{tR} / min")
+
+    fig.canvas.draw() # calculate ticks preliminarily
+    yscale = np.diff(ax.get_yticks())[0]
+    ymax = np.ceil((np.max(a)+0.2*yscale)/yscale)*yscale
+    if setzero:
+        ymin = 0
+    else:
+        ymin = np.ceil((np.min(a)-0.2*yscale)/yscale)*yscale
+    
+    ax.set_xlim(lmin, lmax)
+    ax.set_ylim(ymin, ymax)
+    ax.set_yticks(np.arange(0, ymax+abs(0.0001*ymax), yscale))
+    ax.set_xlabel(r'$\lambda$ / nm')
+    ax.set_ylabel('absorbance')
+    ax.set_title(rf'UV-Vis spectra against {tR} / s for {XV0} = {c0*1e3:.0f} mM''\n'
                  rf'with {film} film under {light} ({int(wavelength*1e9)} nm) light at {power*1e3:.1f} mW')
     plt.show()
