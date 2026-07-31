@@ -162,7 +162,7 @@ def concvstimepoints(data, peak, e, l, points=None, start="", pwidth=10, twidth=
             if start == "": 
                 start = timestamp # if no start time defined, start with the first file
             
-            time = int(elapsed(start, timestamp)) # convert timestamp to time in seconds
+            time = round(elapsed(start, timestamp)) # convert timestamp to time in seconds
             
             if time in points:
                 absorbances = []
@@ -231,7 +231,7 @@ def spectrumvstimepoints(data, points=None, start=""):
             if start == "":
                 start = timestamp # if no start time defined, start with the first file
  
-            time = int(elapsed(start, timestamp)) # convert timestamp to time in seconds
+            time = round(elapsed(start, timestamp)) # convert timestamp to time in seconds
 
             if time in points:
                 with f.open("r") as file:
@@ -276,8 +276,9 @@ def linreg(t, c, istart=1, iend=1e10, i=None, r2threshold=0, interceptthreshold=
 # format numbers and error to appropriate decimal places
 def errformat(val, err, prefix=1, sci=True):
 
-    val = val*(1/prefix) # scale by the unit prefix
-    err = err*(1/prefix)
+    val = val*(1/prefix) if not np.isnan(val) else 0 # scale by the unit prefix
+    err = err*(1/prefix) if not np.isnan(err) else 0
+
     i = int(f"{err:.0e}".split("e")[-1])+1 # find the exponent such that the error has 1sf in the first decimal place
 
     if sci and prefix==1: # scientific notation to 1dp by default
