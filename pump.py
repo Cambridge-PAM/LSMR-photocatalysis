@@ -1,7 +1,7 @@
 from flow import *
 import serial
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 vrxn = 12*8.75*0.8 # reaction volume under light in ul
 vfull = 250 # full cell volume in ul
@@ -22,7 +22,7 @@ com = 'COM4'
 # pump controls using rs-232 serial commands
 def rs232():
     ser = serial.Serial(com, 19200, parity=serial.PARITY_NONE, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, 
-                    timeout=0.05, xonxoff=0, rtscts=0)
+                        timeout=0.05, xonxoff=0, rtscts=0)
     print('Pump connected')
 
     try:
@@ -55,6 +55,7 @@ def rs232():
             print()
             print(f'New flow rate = {flowrates[i]:.2f} ul/min for tR = {tRs[i]/60:.1f} min (Run {i+1}/{len(tRs)})')
             print(f'Elapsed time: {time.perf_counter()-start:.3f} s, Timestamp: {datetime.now().time()}')
+            print(f'Next flow rate switch at: {(datetime.now()+timedelta(seconds=points[i])).time()}')
             time.sleep(points[i]-0.1)
 
         print("Experiment finished!")
