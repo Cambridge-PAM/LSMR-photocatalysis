@@ -186,7 +186,7 @@ def detectorspectrumplot(data, points, start, c0, x, film, light, wavelength, po
     ax.set_ylim(lmin, lmax)
     ax.set_xlabel("time / s")
     ax.set_ylabel(r'$\lambda$ / nm')
-    ax.set_title(rf"UV-Vis spectra of {XV} over time / s for {XV0} = {c0*1e3:.0f} mM""\n"
+    ax.set_title(rf"UV-Vis spectra over time / s for {XV0} = {c0*1e3:.0f} mM""\n"
                  rf'with {film} film under {light} ({int(wavelength*1e9)} nm) light at {power*1e3:.1f} mW')
     plt.show()
 
