@@ -1,5 +1,4 @@
 data/
-**/config.py
 .vscode/
 *.egg-info/
 __pycache__/
