@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lsmr-photocatalysis"
+version = "0.1.0"
+description = "Packages and notebooks for analysing LSMR photocatalysis results and an automated pump control script"
+requires-python = ">=3.10"
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "pybaselines",
+    "pyserial",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
